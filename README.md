@@ -267,7 +267,7 @@ flake8 src/ scripts/
 
 GitHub Actions automatically runs on every commit:
 - **Linting**: flake8, black, isort checks
-- **Testing**: Unit tests across Python 3.9, 3.10, 3.11
+- **Testing**: Unit tests
 - **Code Coverage**: Coverage reports uploaded to Codecov
 - **Security Scan**: Bandit security analysis
 - **Integration Tests**: Module imports and script syntax validation
