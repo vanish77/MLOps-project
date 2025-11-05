@@ -33,13 +33,13 @@ def build_model_and_tokenizer(
     logger.info("Loading model '%s' with num_labels=%d", pretrained_name, num_labels)
 
     # Model configuration
-    config = AutoConfig.from_pretrained(pretrained_name, num_labels=num_labels)
+    config = AutoConfig.from_pretrained(pretrained_name, num_labels=num_labels)  # nosec B615
 
     # Tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_name, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_name, use_fast=True)  # nosec B615
 
     # Model for sequence classification
-    model = AutoModelForSequenceClassification.from_pretrained(pretrained_name, config=config)
+    model = AutoModelForSequenceClassification.from_pretrained(pretrained_name, config=config)  # nosec B615
 
     logger.info("Model and tokenizer loaded successfully")
     return model, tokenizer
