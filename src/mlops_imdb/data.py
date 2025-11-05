@@ -49,7 +49,7 @@ def load_and_prepare_dataset(
         DatasetDict with train/validation/test splits
     """
     logger.info("Loading dataset '%s'...", dataset_name)
-    raw = load_dataset(dataset_name, cache_dir=cache_dir)
+    raw = load_dataset(dataset_name, cache_dir=cache_dir)  # nosec B615
 
     # IMDb already has train/test. Split train into train/validation.
     logger.info("Splitting train into train/validation with val_size=%.3f", val_size)

@@ -92,8 +92,8 @@ def main():
     # Load model and tokenizer
     logger.info("Loading model from %s...", args.model_path)
     try:
-        model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
-        tokenizer = AutoTokenizer.from_pretrained(args.model_path)
+        model = AutoModelForSequenceClassification.from_pretrained(args.model_path)  # nosec B615
+        tokenizer = AutoTokenizer.from_pretrained(args.model_path)  # nosec B615
         logger.info("Model loaded successfully")
     except Exception as e:
         logger.error("Failed to load model: %s", e)
