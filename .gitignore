@@ -66,14 +66,13 @@ runs/
 # mypy
 .mypy_cache/
 
-# Model files (если большие, лучше в Git LFS)
+# Model files (if large, use Git LFS)
 *.bin
 *.safetensors
 *.ckpt
 *.pth
 *.pt
 
-# Данные (если локально)
+# Data (if stored locally)
 data/
 datasets/
-

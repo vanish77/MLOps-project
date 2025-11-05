@@ -33,7 +33,7 @@ jobs:
     
     - name: Check code formatting with black
       run: |
-        black --check src/ scripts/ tests/
+        black --check src/ scripts/ tests/ --exclude '\.git|\.venv|venv|__pycache__|artefacts'
     
     - name: Check import sorting with isort
       run: |
