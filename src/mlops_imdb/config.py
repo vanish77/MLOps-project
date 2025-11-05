@@ -1,6 +1,7 @@
 """
 Module for working with configuration files.
 """
+
 import copy
 import logging
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Config:
     """Class for storing configuration."""
+
     raw: Dict[str, Any]
 
     @property
@@ -36,11 +38,11 @@ class Config:
 def load_config(path: str, overrides: Optional[Dict[str, str]] = None) -> Config:
     """
     Load configuration from YAML file.
-    
+
     Args:
         path: Path to configuration file
         overrides: Dictionary of overrides in format {"key.subkey": "value"}
-    
+
     Returns:
         Config object with loaded configuration
     """

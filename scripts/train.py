@@ -12,7 +12,7 @@ import argparse
 import logging
 import os
 import sys
-from typing import List, Dict
+from typing import Dict, List
 
 # Add root directory to PYTHONPATH
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,13 +25,13 @@ from src.mlops_imdb.train import run_training  # noqa: E402
 def parse_overrides(pairs: List[str]) -> Dict[str, str]:
     """
     Convert list of key=value pairs to dictionary.
-    
+
     Args:
         pairs: List of strings like ["training.learning_rate=3e-5", "data.max_length=128"]
-        
+
     Returns:
         Dictionary of overrides
-        
+
     Raises:
         ValueError: If format is incorrect
     """
@@ -54,25 +54,18 @@ Examples:
   %(prog)s --config configs/baseline.yaml
   %(prog)s --config configs/baseline.yaml --verbose
   %(prog)s --config configs/baseline.yaml -o training.learning_rate=3e-5 -o data.max_length=128
-        """
+        """,
     )
+    parser.add_argument("--config", required=True, help="Path to YAML configuration file")
     parser.add_argument(
-        "--config",
-        required=True,
-        help="Path to YAML configuration file"
-    )
-    parser.add_argument(
-        "--override", "-o",
+        "--override",
+        "-o",
         action="append",
         default=[],
-        help="Override config values, e.g. -o training.learning_rate=3e-5"
+        help="Override config values, e.g. -o training.learning_rate=3e-5",
     )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose (DEBUG level) logging"
-    )
-    
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose (DEBUG level) logging")
+
     args = parser.parse_args()
 
     # Setup logging

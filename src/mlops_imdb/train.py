@@ -1,6 +1,7 @@
 """
 Module for training IMDb sentiment classification model.
 """
+
 import json
 import logging
 import os
@@ -10,8 +11,8 @@ from typing import Dict, Optional
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import (
-    TrainingArguments,
     Trainer,
+    TrainingArguments,
     set_seed,
 )
 
@@ -26,40 +27,33 @@ logger = logging.getLogger(__name__)
 def compute_metrics(eval_pred):
     """
     Compute model quality metrics.
-    
+
     Args:
         eval_pred: Tuple (predictions, labels)
-        
+
     Returns:
         Dictionary with metrics
     """
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
-    
+
     acc = accuracy_score(labels, preds)
-    p, r, f1, _ = precision_recall_fscore_support(
-        labels, preds, average="binary", zero_division=0
-    )
-    
-    return {
-        "accuracy": acc,
-        "precision": p,
-        "recall": r,
-        "f1": f1
-    }
+    p, r, f1, _ = precision_recall_fscore_support(labels, preds, average="binary", zero_division=0)
+
+    return {"accuracy": acc, "precision": p, "recall": r, "f1": f1}
 
 
 def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -> None:
     """
     Run model training process.
-    
+
     Args:
         config_path: Path to configuration file
         overrides: Config parameter overrides
     """
     # Load configuration
     cfg = load_config(config_path, overrides)
-    
+
     # Set seed for reproducibility
     set_seed(cfg.seed)
     random.seed(cfg.seed)
@@ -87,7 +81,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
         val_size=float(cfg.data.get("val_size", 0.1)),
         remove_html=bool(cfg.data.get("remove_html", True)),
     )
-    
+
     # Validate dataset
     logger.info("Step 2/6: Validating dataset...")
     run_all_validations(ds, num_labels=int(cfg.model.get("num_labels", 2)))
@@ -106,7 +100,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
         tokenizer=tokenizer,
         max_length=int(cfg.data.get("max_length", 256)),
     )
-    
+
     # Validate tokenized data
     validate_tokenized_data(tokenized, max_length=int(cfg.data.get("max_length", 256)))
 
@@ -165,7 +159,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
 
     # Save model in Hugging Face format
     logger.info("Saving model and tokenizer to %s", out_dir)
-    trainer.save_model(out_dir)         # save_pretrained for model
+    trainer.save_model(out_dir)  # save_pretrained for model
     tokenizer.save_pretrained(out_dir)  # compatible with HF Hub
 
     # Save metrics
@@ -177,6 +171,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
     # Save training configuration
     config_save_path = os.path.join(out_dir, "training_config.yaml")
     import yaml
+
     with open(config_save_path, "w") as f:
         yaml.dump(cfg.raw, f, default_flow_style=False)
     logger.info("Training config saved to %s", config_save_path)
@@ -190,7 +185,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
 def _attach_file_logger(log_path: str):
     """
     Add file handler to root logger.
-    
+
     Args:
         log_path: Path to log file
     """
@@ -198,7 +193,7 @@ def _attach_file_logger(log_path: str):
     root = logging.getLogger()
     if any(isinstance(h, logging.FileHandler) for h in root.handlers):
         return
-    
+
     fh = logging.FileHandler(log_path)
     fh.setLevel(root.level or logging.INFO)
     fmt = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
