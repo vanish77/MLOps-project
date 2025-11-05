@@ -6,10 +6,10 @@ Develop a machine learning service capable of automatically classifying movie re
 
 ## Target Metrics for Production
 
-- **Average service response time:** ? 200 ms
-- **Share of failed requests:** ? 1%
+- **Average service response time:** <= 200 ms
+- **Share of failed requests:** <= 1%
 - **Memory/CPU usage:** within specified SLA limits
-- **Model quality:** Accuracy ? 90%
+- **Model quality:** Accuracy >= 90%
 
 ## Dataset
 
@@ -31,7 +31,7 @@ Develop a machine learning service capable of automatically classifying movie re
 
 4. **Metrics Measurement:**  
    - Evaluate accuracy, precision, recall, and F1-score.  
-   - Measure response time and resource usage during inference (target average ? 200 ms).
+   - Measure response time and resource usage during inference (target average <= 200 ms).
 
 5. **Robustness Tests:**  
    - Check model performance on edge cases (sarcasm, very short/long reviews).
@@ -108,14 +108,25 @@ MLOps/
 |
 +-- README.md                      # Project documentation
 +-- requirements.txt               # Python dependencies
++-- Makefile                       # Convenience commands
++-- pytest.ini                     # Pytest configuration
++-- pyproject.toml                 # Tool configurations (black, isort)
++-- .flake8                        # Flake8 linting rules
++-- .gitignore                     # Git ignore rules
 +-- example_inference.py           # Inference usage example
++-- TESTING.md                     # Testing guide
++-- TEST_RESULTS.md                # Test results summary
+|
++-- .github/
+|   +-- workflows/
+|       +-- ci.yml                 # CI/CD pipeline (GitHub Actions)
 |
 +-- configs/
 |   +-- baseline.yaml              # Training configuration
 |
 +-- scripts/
 |   +-- train.py                   # Training script
-|   +-- validate.py                # Validation script
+|   +-- validate.py                # Model validation script
 |   +-- upload_to_hub.py           # HF Hub upload script
 |
 +-- src/
@@ -125,8 +136,18 @@ MLOps/
 |       +-- data.py                # Data loading and preprocessing
 |       +-- model.py               # Model creation
 |       +-- train.py               # Training logic
+|       +-- validation.py          # Data validation functions
+|       +-- inference.py           # Prediction postprocessing for API
 |
-+-- artefacts/                     # Created during training
++-- tests/                         # Test suite
+|   +-- __init__.py
+|   +-- conftest.py                # Pytest fixtures and configuration
+|   +-- test_config.py             # Configuration tests
+|   +-- test_data.py               # Data preprocessing tests
+|   +-- test_inference.py          # Inference and postprocessing tests
+|   +-- test_validation.py         # Data validation tests
+|
++-- artefacts/                     # Created during training (not in git)
     +-- distilbert-imdb/           # Trained model (HF compatible)
     |   +-- model.safetensors      # Model weights
     |   +-- config.json            # Model config
@@ -151,19 +172,35 @@ MLOps/
   - Train/validation/test split
   - Tokenization
 
+- **Data validation:** `src/mlops_imdb/validation.py`
+  - Dataset structure and schema validation
+  - Data type and range checks
+  - Text quality verification
+  - Dataset balance analysis
+  - Integrated into training pipeline
+
 - **Neural network architecture:** `src/mlops_imdb/model.py`
   - DistilBERT-based model for binary classification
   - Pretrained weights from Hugging Face
+  - Hugging Face compatible format
 
 - **Training execution:** `scripts/train.py`
   - CLI interface with argument parsing
   - Config-based training
   - Parameter overrides support
+  - Automatic data validation
 
 - **Model saving:** `src/mlops_imdb/train.py`
   - Saves using `save_pretrained()` method
   - Hugging Face compatible format
   - Stored in `artefacts/distilbert-imdb/`
+
+- **Inference and postprocessing:** `src/mlops_imdb/inference.py`
+  - Prediction postprocessing for API responses
+  - Logits to probabilities conversion
+  - Label to text mapping
+  - Confidence scoring
+  - Batch processing support
 
 - **Validation and metrics:** Test set evaluation
   - Accuracy, Precision, Recall, F1-score
@@ -186,10 +223,24 @@ MLOps/
   - File logging (`artefacts/logs/train.log`)
   - Detailed step-by-step logs
 
+- **Testing:** Comprehensive test suite (`tests/`)
+  - 73+ unit tests covering all modules
+  - Data validation tests
+  - Inference pipeline tests
+  - Preprocessing tests
+  - Configuration tests
+  - Automated via GitHub Actions CI/CD
+
+- **Code quality:** Automated checks
+  - flake8 for linting
+  - black for code formatting
+  - isort for import sorting
+  - Bandit for security scanning
+
 ### Model Performance
 
 Baseline results on test set:
-- **Accuracy:** 90.88% (target: ? 90%)
+- **Accuracy:** 90.88% (target: >= 90%)
 - **Precision:** 89.98%
 - **Recall:** 92.00%
 - **F1-Score:** 90.98%
@@ -267,9 +318,50 @@ flake8 src/ scripts/
 
 GitHub Actions automatically runs on every commit:
 - **Linting**: flake8, black, isort checks
-- **Testing**: Unit tests
+- **Testing**: Unit tests (73+ tests) on Python 3.10
 - **Code Coverage**: Coverage reports uploaded to Codecov
 - **Security Scan**: Bandit security analysis
 - **Integration Tests**: Module imports and script syntax validation
 
-See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details
+**CI Workflow:** `.github/workflows/ci.yml`
+
+**Status:** All tests passing (73/73) ?
+
+**How to check:** https://github.com/vanish77/MLOps-project/actions
+
+### Using Makefile
+
+Convenient commands for common tasks:
+
+```bash
+make install    # Install dependencies
+make test       # Run all tests with coverage
+make lint       # Check code quality
+make format     # Auto-format code
+make train      # Run training
+make validate   # Validate trained model
+make clean      # Clean build artifacts
+```
+
+---
+
+## Requirements
+
+- Python 3.9+
+- PyTorch 2.0+
+- Transformers 4.44+
+- See `requirements.txt` for complete list
+
+## Platform Notes
+
+- **CPU:** Works on any platform, training takes ~30-45 minutes
+- **Apple Silicon (M1/M2):** Automatically uses MPS acceleration, ~10-15 minutes
+- **NVIDIA GPU:** Set `fp16: true` in config for faster training
+
+## License
+
+This project is for educational purposes.
+
+## Author
+
+MLOps course project - Sentiment Analysis on IMDb dataset
