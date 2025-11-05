@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def upload_model(model_path: str, repo_name: str):
     """
     Upload model to Hugging Face Hub.
-    
+
     Args:
         model_path: Local path to trained model
         repo_name: Repository name on HF Hub (username/model-name)
@@ -29,7 +29,7 @@ def upload_model(model_path: str, repo_name: str):
     logger.info("=" * 70)
     logger.info("Uploading Model to Hugging Face Hub")
     logger.info("=" * 70)
-    
+
     # Load model and tokenizer
     logger.info("Loading model from %s...", model_path)
     try:
@@ -39,18 +39,12 @@ def upload_model(model_path: str, repo_name: str):
     except Exception as e:
         logger.error("Failed to load model: %s", e)
         sys.exit(1)
-    
+
     # Upload to Hub
     logger.info("Uploading to %s...", repo_name)
     try:
-        model.push_to_hub(
-            repo_name,
-            commit_message="Upload IMDb sentiment classification model (DistilBERT)"
-        )
-        tokenizer.push_to_hub(
-            repo_name,
-            commit_message="Upload tokenizer"
-        )
+        model.push_to_hub(repo_name, commit_message="Upload IMDb sentiment classification model (DistilBERT)")
+        tokenizer.push_to_hub(repo_name, commit_message="Upload tokenizer")
         logger.info("=" * 70)
         logger.info("Upload successful!")
         logger.info("Model available at: https://huggingface.co/%s", repo_name)
@@ -63,24 +57,13 @@ def upload_model(model_path: str, repo_name: str):
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(
-        description="Upload trained model to Hugging Face Hub."
-    )
-    parser.add_argument(
-        "--model-path",
-        required=True,
-        help="Path to the trained model directory"
-    )
-    parser.add_argument(
-        "--repo-name",
-        required=True,
-        help="Repository name on HF Hub (username/model-name)"
-    )
-    
+    parser = argparse.ArgumentParser(description="Upload trained model to Hugging Face Hub.")
+    parser.add_argument("--model-path", required=True, help="Path to the trained model directory")
+    parser.add_argument("--repo-name", required=True, help="Repository name on HF Hub (username/model-name)")
+
     args = parser.parse_args()
     upload_model(args.model_path, args.repo_name)
 
 
 if __name__ == "__main__":
     main()
-

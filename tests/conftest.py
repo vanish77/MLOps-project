@@ -1,12 +1,13 @@
 """
 Pytest configuration and fixtures.
 """
+
 import os
 import sys
 from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
 import torch
 from datasets import Dataset, DatasetDict
 
@@ -28,37 +29,24 @@ def sample_text_data():
         "test": [
             "Best movie ever!",
             "Worst movie I've seen.",
-        ]
+        ],
     }
 
 
 @pytest.fixture
 def sample_labels():
     """Sample labels for testing."""
-    return {
-        "train": [1, 0, 1, 0],  # positive, negative, positive, negative
-        "test": [1, 0]
-    }
+    return {"train": [1, 0, 1, 0], "test": [1, 0]}  # positive, negative, positive, negative
 
 
 @pytest.fixture
 def sample_dataset(sample_text_data, sample_labels):
     """Create a sample DatasetDict for testing."""
-    train_ds = Dataset.from_dict({
-        "text": sample_text_data["train"],
-        "label": sample_labels["train"]
-    })
-    
-    test_ds = Dataset.from_dict({
-        "text": sample_text_data["test"],
-        "label": sample_labels["test"]
-    })
-    
-    return DatasetDict({
-        "train": train_ds,
-        "validation": test_ds,  # Use same as test for simplicity
-        "test": test_ds
-    })
+    train_ds = Dataset.from_dict({"text": sample_text_data["train"], "label": sample_labels["train"]})
+
+    test_ds = Dataset.from_dict({"text": sample_text_data["test"], "label": sample_labels["test"]})
+
+    return DatasetDict({"train": train_ds, "validation": test_ds, "test": test_ds})  # Use same as test for simplicity
 
 
 @pytest.fixture
@@ -67,28 +55,32 @@ def sample_tokenized_data():
     return {
         "input_ids": [[101, 2023, 3185, 2001, 2307, 102], [101, 6659, 2143, 102]],
         "attention_mask": [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1]],
-        "label": [1, 0]
+        "label": [1, 0],
     }
 
 
 @pytest.fixture
 def sample_logits():
     """Sample model logits for testing."""
-    return np.array([
-        [0.1, 2.5],   # Strong positive
-        [3.0, 0.2],   # Strong negative
-        [1.0, 1.1],   # Weak positive
-        [0.5, 0.4],   # Weak negative
-    ])
+    return np.array(
+        [
+            [0.1, 2.5],  # Strong positive
+            [3.0, 0.2],  # Strong negative
+            [1.0, 1.1],  # Weak positive
+            [0.5, 0.4],  # Weak negative
+        ]
+    )
 
 
 @pytest.fixture
 def sample_logits_torch():
     """Sample model logits as torch tensor."""
-    return torch.tensor([
-        [0.1, 2.5],
-        [3.0, 0.2],
-    ])
+    return torch.tensor(
+        [
+            [0.1, 2.5],
+            [3.0, 0.2],
+        ]
+    )
 
 
 @pytest.fixture
@@ -127,4 +119,3 @@ def set_random_seeds():
     torch.manual_seed(42)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(42)
-
