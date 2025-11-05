@@ -18,6 +18,7 @@ from transformers import (
 from .config import load_config
 from .data import load_and_prepare_dataset, tokenize_dataset
 from .model import build_model_and_tokenizer
+from .validation import run_all_validations, validate_tokenized_data
 
 logger = logging.getLogger(__name__)
 
@@ -79,31 +80,38 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
     logger.info("Config: %s", json.dumps(cfg.raw, indent=2))
 
     # Load and prepare data
-    logger.info("Step 1/5: Loading and preparing dataset...")
+    logger.info("Step 1/6: Loading and preparing dataset...")
     ds = load_and_prepare_dataset(
         dataset_name=cfg.data.get("dataset_name", "imdb"),
         cache_dir=cfg.data.get("cache_dir"),
         val_size=float(cfg.data.get("val_size", 0.1)),
         remove_html=bool(cfg.data.get("remove_html", True)),
     )
+    
+    # Validate dataset
+    logger.info("Step 2/6: Validating dataset...")
+    run_all_validations(ds, num_labels=int(cfg.model.get("num_labels", 2)))
 
     # Create model and tokenizer
-    logger.info("Step 2/5: Building model and tokenizer...")
+    logger.info("Step 3/6: Building model and tokenizer...")
     model, tokenizer = build_model_and_tokenizer(
         pretrained_name=cfg.model.get("pretrained_name", "distilbert-base-uncased"),
         num_labels=int(cfg.model.get("num_labels", 2)),
     )
 
     # Tokenize dataset
-    logger.info("Step 3/5: Tokenizing dataset...")
+    logger.info("Step 4/6: Tokenizing dataset...")
     tokenized = tokenize_dataset(
         ds,
         tokenizer=tokenizer,
         max_length=int(cfg.data.get("max_length", 256)),
     )
+    
+    # Validate tokenized data
+    validate_tokenized_data(tokenized, max_length=int(cfg.data.get("max_length", 256)))
 
     # Configure training parameters
-    logger.info("Step 4/5: Configuring training...")
+    logger.info("Step 5/6: Configuring training...")
     targs = TrainingArguments(
         output_dir=out_dir,
         logging_dir=log_dir,
@@ -139,7 +147,7 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
     )
 
     # Train model
-    logger.info("Step 5/5: Starting training...")
+    logger.info("Step 6/6: Starting training...")
     logger.info("-" * 60)
     train_result = trainer.train()
     logger.info("-" * 60)
