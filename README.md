@@ -200,3 +200,76 @@ Baseline results on test set:
 - All dependencies with versions in `requirements.txt`
 - Training configuration saved with model
 - Complete training logs
+
+---
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src --cov-report=html --cov-report=term
+
+# Run specific test file
+pytest tests/test_validation.py -v
+
+# Run only unit tests
+pytest -m unit
+
+# Run tests in parallel (faster)
+pytest -n auto
+```
+
+### Test Coverage
+
+The project includes comprehensive tests for:
+
+- **Data validation** (`test_validation.py`)
+  - Dataset structure and schema validation
+  - Data types and label ranges
+  - Text quality checks
+  - Dataset balance verification
+
+- **Data preprocessing** (`test_data.py`)
+  - HTML tag removal
+  - Text cleaning functions
+  - Tokenization pipeline
+
+- **Inference and postprocessing** (`test_inference.py`)
+  - Logits to probabilities conversion
+  - Label prediction and confidence scores
+  - API response formatting
+  - Edge cases handling
+
+- **Configuration** (`test_config.py`)
+  - Config loading and parsing
+  - Parameter overrides
+  - Type casting
+
+### Code Quality
+
+```bash
+# Format code with black
+black src/ scripts/ tests/
+
+# Sort imports with isort
+isort src/ scripts/ tests/
+
+# Check code quality with flake8
+flake8 src/ scripts/
+```
+
+### Continuous Integration
+
+GitHub Actions automatically runs on every commit:
+- **Linting**: flake8, black, isort checks
+- **Testing**: Unit tests across Python 3.9, 3.10, 3.11
+- **Code Coverage**: Coverage reports uploaded to Codecov
+- **Security Scan**: Bandit security analysis
+- **Integration Tests**: Module imports and script syntax validation
+
+See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details
