@@ -1,0 +1,36 @@
+# Configuration file for IMDb model training
+# Baseline: DistilBERT fine-tuning
+
+seed: 42
+
+data:
+  dataset_name: imdb
+  cache_dir: null             # or absolute path to datasets cache
+  val_size: 0.1               # fraction of train for validation
+  max_length: 256             # max token length
+  remove_html: true           # clean HTML tags
+
+model:
+  pretrained_name: distilbert-base-uncased
+  num_labels: 2
+
+training:
+  output_dir: ./artefacts/distilbert-imdb
+  logging_dir: ./artefacts/logs
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 32
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  num_train_epochs: 1
+  warmup_ratio: 0.1
+  gradient_accumulation_steps: 1
+  fp16: false                 # GPU
+  eval_strategy: epoch       
+  save_strategy: epoch
+  logging_strategy: steps
+  logging_steps: 50
+  metric_for_best_model: f1
+  load_best_model_at_end: true
+  save_total_limit: 2
+  dataloader_num_workers: 4
+  report_to: none            # tensorboard

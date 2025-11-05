@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+.envrc
+
+# Dataset cache
+.cache/
+cache/
+
+# Training artifacts
+artefacts/
+artifacts/
+outputs/
+checkpoints/
+logs/
+runs/
+
+# Hugging Face cache
+.huggingface/
+
+# MacOS
+.DS_Store
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Model files (если большие, лучше в Git LFS)
+*.bin
+*.safetensors
+*.ckpt
+*.pth
+*.pt
+
+# Данные (если локально)
+data/
+datasets/
+

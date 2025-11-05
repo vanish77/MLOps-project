@@ -43,5 +43,62 @@ Develop a machine learning service capable of automatically classifying movie re
 
 ---
 
-*Repository will include this README, training scripts, and deployment configs.*
+## ?? Quick Start
+
+### Installation
+```bash
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Training
+```bash
+# Basic training with default config
+python scripts/train.py --config configs/baseline.yaml
+
+# With verbose logging
+python scripts/train.py --config configs/baseline.yaml --verbose
+
+# Override config parameters
+python scripts/train.py --config configs/baseline.yaml \
+  -o training.learning_rate=3e-5 \
+  -o training.num_train_epochs=3
+```
+
+### Validation
+```bash
+# Test model on examples
+python scripts/validate.py --model-path artefacts/distilbert-imdb
+
+# Custom examples
+python scripts/validate.py --model-path artefacts/distilbert-imdb \
+  --examples "Amazing movie!" "Terrible film."
+```
+
+### Project Structure
+```
+MLOps/
+??? configs/baseline.yaml       # Training configuration
+??? scripts/
+?   ??? train.py               # Training script
+?   ??? validate.py            # Validation script
+??? src/mlops_imdb/            # Core modules
+?   ??? config.py              # Config management
+?   ??? data.py                # Data preprocessing
+?   ??? model.py               # Model creation
+?   ??? train.py               # Training logic
+??? artefacts/                 # Training outputs
+    ??? distilbert-imdb/       # Trained model (HF compatible)
+    ??? logs/                  # Training logs
+```
+
+**For detailed setup instructions, see [SETUP.md](SETUP.md)**
+
+---
+
+*Repository includes training scripts, configs, and model artifacts.*
 */
