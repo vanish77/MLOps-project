@@ -46,13 +46,29 @@ env/
 .cache/
 cache/
 
-# Training artifacts
+# Training artifacts (local - DVC tracks in models/)
 artefacts/
 artifacts/
 outputs/
 checkpoints/
-logs/
 runs/
+logs/
+
+# DVC
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+.dvc/plots/
+
+# DVC tracked data (actual files ignored, .dvc files tracked in git)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/*.dvc
+models/*
+!models/.gitkeep
+!models/*.dvc
 
 # Hugging Face cache
 .huggingface/
@@ -66,13 +82,9 @@ runs/
 # mypy
 .mypy_cache/
 
-# Model files (if large, use Git LFS)
+# Model files (DVC tracked)
 *.bin
 *.safetensors
 *.ckpt
 *.pth
 *.pt
-
-# Data (if stored locally)
-data/
-datasets/

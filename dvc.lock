@@ -1,0 +1,93 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: .venv/bin/python scripts/prepare.py --output-dir data/processed
+    deps:
+    - path: scripts/prepare.py
+      hash: md5
+      md5: 47c5e724a3716f10b56ffc5137862bfe
+      size: 2599
+      isexec: true
+    - path: src/mlops_imdb/data.py
+      hash: md5
+      md5: 81f9d72a55ad12e5479fb72fda96eb0f
+      size: 2886
+    outs:
+    - path: data/processed/processed_test.jsonl
+      hash: md5
+      md5: 2dc0f3de0fc517318459a431388e0ce2
+      size: 32433558
+    - path: data/processed/processed_train.jsonl
+      hash: md5
+      md5: 56eaa3511a73d09f607f05104c8f56df
+      size: 33207349
+    - path: data/processed/raw_test.jsonl
+      hash: md5
+      md5: 7af7a645673c15d15b6659ad85ec401d
+      size: 33095777
+    - path: data/processed/raw_train.jsonl
+      hash: md5
+      md5: 7992cf7918d1449a7ab8a0c42796d5e5
+      size: 33880437
+  train:
+    cmd: .venv/bin/python scripts/train_dvc.py --data-dir data/processed --model-dir
+      models/baseline --config configs/baseline.yaml
+    deps:
+    - path: configs/baseline.yaml
+      hash: md5
+      md5: 9321ba916d19f93e95635de2feb41a40
+      size: 971
+    - path: data/processed/processed_test.jsonl
+      hash: md5
+      md5: 2dc0f3de0fc517318459a431388e0ce2
+      size: 32433558
+    - path: data/processed/processed_train.jsonl
+      hash: md5
+      md5: 56eaa3511a73d09f607f05104c8f56df
+      size: 33207349
+    - path: scripts/train_dvc.py
+      hash: md5
+      md5: d270b8311ae57d429a8603067906582c
+      size: 5409
+      isexec: true
+    - path: src/mlops_imdb/data.py
+      hash: md5
+      md5: 81f9d72a55ad12e5479fb72fda96eb0f
+      size: 2886
+    - path: src/mlops_imdb/model.py
+      hash: md5
+      md5: c2177e9930f23e379ed28b3e86b3a90b
+      size: 1225
+    - path: src/mlops_imdb/train.py
+      hash: md5
+      md5: 0b532d09edb01b8d84f3d7305bdf6400
+      size: 6972
+    - path: src/mlops_imdb/validation.py
+      hash: md5
+      md5: 0c675884324d20c87579b7dc4224d682
+      size: 8931
+    outs:
+    - path: models/baseline
+      hash: md5
+      md5: a140ebd6e44741f4de7716f598be9d58.dir
+      size: 1073313731
+      nfiles: 19
+  evaluate:
+    cmd: .venv/bin/python scripts/evaluate.py --model-dir models/baseline --metrics-file
+      metrics/eval.json
+    deps:
+    - path: models/baseline
+      hash: md5
+      md5: a140ebd6e44741f4de7716f598be9d58.dir
+      size: 1073313731
+      nfiles: 19
+    - path: scripts/evaluate.py
+      hash: md5
+      md5: a3bea47f81f08c93a7e9414dfbcdea64
+      size: 2331
+      isexec: true
+    outs:
+    - path: metrics/eval.json
+      hash: md5
+      md5: 8947f14d1538a15a73de395f870f4334
+      size: 280

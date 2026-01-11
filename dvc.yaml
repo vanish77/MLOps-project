@@ -1,0 +1,33 @@
+stages:
+  prepare:
+    cmd: .venv/bin/python scripts/prepare.py --output-dir data/processed
+    deps:
+      - scripts/prepare.py
+      - src/mlops_imdb/data.py
+    outs:
+      - data/processed/processed_train.jsonl
+      - data/processed/processed_test.jsonl
+      - data/processed/raw_train.jsonl
+      - data/processed/raw_test.jsonl
+
+  train:
+    cmd: .venv/bin/python scripts/train_dvc.py --data-dir data/processed --model-dir models/baseline --config configs/baseline.yaml
+    deps:
+      - scripts/train_dvc.py
+      - data/processed/processed_train.jsonl
+      - data/processed/processed_test.jsonl
+      - configs/baseline.yaml
+      - src/mlops_imdb/data.py
+      - src/mlops_imdb/model.py
+      - src/mlops_imdb/train.py
+      - src/mlops_imdb/validation.py
+    outs:
+      - models/baseline
+
+  evaluate:
+    cmd: .venv/bin/python scripts/evaluate.py --model-dir models/baseline --metrics-file metrics/eval.json
+    deps:
+      - scripts/evaluate.py
+      - models/baseline
+    outs:
+      - metrics/eval.json
