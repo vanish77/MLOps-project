@@ -6,8 +6,11 @@ import json
 import logging
 import os
 import random
+import shutil
 from typing import Dict, Optional
 
+import mlflow
+import mlflow.transformers
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from transformers import (
@@ -45,7 +48,7 @@ def compute_metrics(eval_pred):
 
 def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -> None:
     """
-    Run model training process.
+    Run model training process with MLflow tracking.
 
     Args:
         config_path: Path to configuration file
@@ -73,113 +76,184 @@ def run_training(config_path: str, overrides: Optional[Dict[str, str]] = None) -
     logger.info("=" * 60)
     logger.info("Config: %s", json.dumps(cfg.raw, indent=2))
 
-    # Load and prepare data
-    logger.info("Step 1/6: Loading and preparing dataset...")
-    ds = load_and_prepare_dataset(
-        dataset_name=cfg.data.get("dataset_name", "imdb"),
-        cache_dir=cfg.data.get("cache_dir"),
-        val_size=float(cfg.data.get("val_size", 0.1)),
-        remove_html=bool(cfg.data.get("remove_html", True)),
-    )
+    # Setup MLflow tracking
+    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    
+    # Set experiment name
+    experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "imdb-sentiment-classification")
+    mlflow.set_experiment(experiment_name)
+    
+    logger.info("MLflow tracking URI: %s", mlflow_tracking_uri)
+    logger.info("MLflow experiment: %s", experiment_name)
 
-    # Validate dataset
-    logger.info("Step 2/6: Validating dataset...")
-    run_all_validations(ds, num_labels=int(cfg.model.get("num_labels", 2)))
+    # Start MLflow run
+    with mlflow.start_run(run_name=f"train_{cfg.model.get('pretrained_name', 'distilbert')}"):
+        # Enable MLflow autologging for transformers
+        mlflow.transformers.autolog(
+            log_models=True,
+            log_input_examples=False,
+            log_model_signatures=False,
+        )
+        
+        # Log config parameters
+        mlflow.log_params({
+            "seed": cfg.seed,
+            "dataset_name": cfg.data.get("dataset_name", "imdb"),
+            "val_size": cfg.data.get("val_size", 0.1),
+            "max_length": cfg.data.get("max_length", 256),
+            "remove_html": cfg.data.get("remove_html", True),
+            "pretrained_name": cfg.model.get("pretrained_name", "distilbert-base-uncased"),
+            "num_labels": cfg.model.get("num_labels", 2),
+            "learning_rate": cfg.training.get("learning_rate", 2e-5),
+            "batch_size_train": cfg.training.get("per_device_train_batch_size", 16),
+            "batch_size_eval": cfg.training.get("per_device_eval_batch_size", 32),
+            "num_epochs": cfg.training.get("num_train_epochs", 2),
+            "weight_decay": cfg.training.get("weight_decay", 0.0),
+            "warmup_ratio": cfg.training.get("warmup_ratio", 0.0),
+            "fp16": cfg.training.get("fp16", False),
+        })
+        
+        # Log config file as artifact
+        mlflow.log_artifact(config_path, artifact_path="config")
 
-    # Create model and tokenizer
-    logger.info("Step 3/6: Building model and tokenizer...")
-    model, tokenizer = build_model_and_tokenizer(
-        pretrained_name=cfg.model.get("pretrained_name", "distilbert-base-uncased"),
-        num_labels=int(cfg.model.get("num_labels", 2)),
-    )
+        # Load and prepare data
+        logger.info("Step 1/6: Loading and preparing dataset...")
+        ds = load_and_prepare_dataset(
+            dataset_name=cfg.data.get("dataset_name", "imdb"),
+            cache_dir=cfg.data.get("cache_dir"),
+            val_size=float(cfg.data.get("val_size", 0.1)),
+            remove_html=bool(cfg.data.get("remove_html", True)),
+        )
 
-    # Tokenize dataset
-    logger.info("Step 4/6: Tokenizing dataset...")
-    tokenized = tokenize_dataset(
-        ds,
-        tokenizer=tokenizer,
-        max_length=int(cfg.data.get("max_length", 256)),
-    )
+        # Log dataset stats
+        mlflow.log_params({
+            "train_samples": len(ds["train"]),
+            "val_samples": len(ds["validation"]),
+            "test_samples": len(ds["test"]),
+        })
 
-    # Validate tokenized data
-    validate_tokenized_data(tokenized, max_length=int(cfg.data.get("max_length", 256)))
+        # Validate dataset
+        logger.info("Step 2/6: Validating dataset...")
+        run_all_validations(ds, num_labels=int(cfg.model.get("num_labels", 2)))
 
-    # Configure training parameters
-    logger.info("Step 5/6: Configuring training...")
-    targs = TrainingArguments(
-        output_dir=out_dir,
-        logging_dir=log_dir,
-        per_device_train_batch_size=int(cfg.training.get("per_device_train_batch_size", 16)),
-        per_device_eval_batch_size=int(cfg.training.get("per_device_eval_batch_size", 32)),
-        learning_rate=float(cfg.training.get("learning_rate", 2e-5)),
-        weight_decay=float(cfg.training.get("weight_decay", 0.0)),
-        num_train_epochs=float(cfg.training.get("num_train_epochs", 2)),
-        warmup_ratio=float(cfg.training.get("warmup_ratio", 0.0)),
-        gradient_accumulation_steps=int(cfg.training.get("gradient_accumulation_steps", 1)),
-        fp16=bool(cfg.training.get("fp16", False)),
-        eval_strategy=str(cfg.training.get("eval_strategy", "epoch")),
-        save_strategy=str(cfg.training.get("save_strategy", "epoch")),
-        logging_strategy=str(cfg.training.get("logging_strategy", "steps")),
-        logging_steps=int(cfg.training.get("logging_steps", 50)),
-        metric_for_best_model=str(cfg.training.get("metric_for_best_model", "f1")),
-        load_best_model_at_end=bool(cfg.training.get("load_best_model_at_end", True)),
-        save_total_limit=int(cfg.training.get("save_total_limit", 2)),
-        dataloader_num_workers=int(cfg.training.get("dataloader_num_workers", 0)),
-        report_to=None if cfg.training.get("report_to", "none") == "none" else cfg.training.get("report_to"),
-        seed=int(cfg.seed),
-        eval_on_start=False,
-    )
+        # Create model and tokenizer
+        logger.info("Step 3/6: Building model and tokenizer...")
+        model, tokenizer = build_model_and_tokenizer(
+            pretrained_name=cfg.model.get("pretrained_name", "distilbert-base-uncased"),
+            num_labels=int(cfg.model.get("num_labels", 2)),
+        )
 
-    # Create Trainer
-    trainer = Trainer(
-        model=model,
-        args=targs,
-        train_dataset=tokenized["train"],
-        eval_dataset=tokenized["validation"],
-        tokenizer=tokenizer,
-        compute_metrics=compute_metrics,
-    )
+        # Tokenize dataset
+        logger.info("Step 4/6: Tokenizing dataset...")
+        tokenized = tokenize_dataset(
+            ds,
+            tokenizer=tokenizer,
+            max_length=int(cfg.data.get("max_length", 256)),
+        )
 
-    # Train model
-    logger.info("Step 6/6: Starting training...")
-    logger.info("-" * 60)
-    train_result = trainer.train()
-    logger.info("-" * 60)
-    logger.info("Training completed!")
-    logger.info("Training metrics: %s", train_result.metrics)
+        # Validate tokenized data
+        validate_tokenized_data(tokenized, max_length=int(cfg.data.get("max_length", 256)))
 
-    # Evaluate on test set
-    logger.info("=" * 60)
-    logger.info("Evaluating on test set...")
-    test_metrics = trainer.evaluate(eval_dataset=tokenized["test"])
-    logger.info("Test metrics:")
-    for key, value in test_metrics.items():
-        logger.info("  %s: %.4f", key, value)
-    logger.info("=" * 60)
+        # Configure training parameters
+        logger.info("Step 5/6: Configuring training...")
+        targs = TrainingArguments(
+            output_dir=out_dir,
+            logging_dir=log_dir,
+            per_device_train_batch_size=int(cfg.training.get("per_device_train_batch_size", 16)),
+            per_device_eval_batch_size=int(cfg.training.get("per_device_eval_batch_size", 32)),
+            learning_rate=float(cfg.training.get("learning_rate", 2e-5)),
+            weight_decay=float(cfg.training.get("weight_decay", 0.0)),
+            num_train_epochs=float(cfg.training.get("num_train_epochs", 2)),
+            warmup_ratio=float(cfg.training.get("warmup_ratio", 0.0)),
+            gradient_accumulation_steps=int(cfg.training.get("gradient_accumulation_steps", 1)),
+            fp16=bool(cfg.training.get("fp16", False)),
+            eval_strategy=str(cfg.training.get("eval_strategy", "epoch")),
+            save_strategy=str(cfg.training.get("save_strategy", "epoch")),
+            logging_strategy=str(cfg.training.get("logging_strategy", "steps")),
+            logging_steps=int(cfg.training.get("logging_steps", 50)),
+            metric_for_best_model=str(cfg.training.get("metric_for_best_model", "f1")),
+            load_best_model_at_end=bool(cfg.training.get("load_best_model_at_end", True)),
+            save_total_limit=int(cfg.training.get("save_total_limit", 2)),
+            dataloader_num_workers=int(cfg.training.get("dataloader_num_workers", 0)),
+            report_to=None if cfg.training.get("report_to", "none") == "none" else cfg.training.get("report_to"),
+            seed=int(cfg.seed),
+            eval_on_start=False,
+        )
 
-    # Save model in Hugging Face format
-    logger.info("Saving model and tokenizer to %s", out_dir)
-    trainer.save_model(out_dir)  # save_pretrained for model
-    tokenizer.save_pretrained(out_dir)  # compatible with HF Hub
+        # Create Trainer
+        trainer = Trainer(
+            model=model,
+            args=targs,
+            train_dataset=tokenized["train"],
+            eval_dataset=tokenized["validation"],
+            tokenizer=tokenizer,
+            compute_metrics=compute_metrics,
+        )
 
-    # Save metrics
-    metrics_path = os.path.join(out_dir, "metrics_test.json")
-    with open(metrics_path, "w") as f:
-        json.dump(test_metrics, f, indent=2)
-    logger.info("Test metrics saved to %s", metrics_path)
+        # Train model
+        logger.info("Step 6/6: Starting training...")
+        logger.info("-" * 60)
+        train_result = trainer.train()
+        logger.info("-" * 60)
+        logger.info("Training completed!")
+        logger.info("Training metrics: %s", train_result.metrics)
 
-    # Save training configuration
-    config_save_path = os.path.join(out_dir, "training_config.yaml")
-    import yaml
+        # Evaluate on test set
+        logger.info("=" * 60)
+        logger.info("Evaluating on test set...")
+        test_metrics = trainer.evaluate(eval_dataset=tokenized["test"])
+        logger.info("Test metrics:")
+        for key, value in test_metrics.items():
+            logger.info("  %s: %.4f", key, value)
+        logger.info("=" * 60)
 
-    with open(config_save_path, "w") as f:
-        yaml.dump(cfg.raw, f, default_flow_style=False)
-    logger.info("Training config saved to %s", config_save_path)
+        # Log test metrics to MLflow
+        mlflow.log_metrics({
+            f"test_{k}": v for k, v in test_metrics.items() 
+            if isinstance(v, (int, float))
+        })
 
-    logger.info("=" * 60)
-    logger.info("All artifacts saved successfully!")
-    logger.info("Model directory: %s", out_dir)
-    logger.info("=" * 60)
+        # Save model in Hugging Face format
+        logger.info("Saving model and tokenizer to %s", out_dir)
+        trainer.save_model(out_dir)  # save_pretrained for model
+        tokenizer.save_pretrained(out_dir)  # compatible with HF Hub
+
+        # Save metrics
+        metrics_path = os.path.join(out_dir, "metrics_test.json")
+        with open(metrics_path, "w") as f:
+            json.dump(test_metrics, f, indent=2)
+        logger.info("Test metrics saved to %s", metrics_path)
+
+        # Save training configuration
+        config_save_path = os.path.join(out_dir, "training_config.yaml")
+        import yaml
+
+        with open(config_save_path, "w") as f:
+            yaml.dump(cfg.raw, f, default_flow_style=False)
+        logger.info("Training config saved to %s", config_save_path)
+        
+        # Log artifacts to MLflow
+        mlflow.log_artifact(metrics_path, artifact_path="metrics")
+        mlflow.log_artifact(config_save_path, artifact_path="config")
+        
+        # Log dvc.lock if exists
+        dvc_lock_path = os.path.join(os.getcwd(), "dvc.lock")
+        if os.path.exists(dvc_lock_path):
+            mlflow.log_artifact(dvc_lock_path, artifact_path="dvc")
+            logger.info("dvc.lock logged to MLflow")
+        
+        # Log training logs
+        log_file = os.path.join(log_dir, "train.log")
+        if os.path.exists(log_file):
+            mlflow.log_artifact(log_file, artifact_path="logs")
+            logger.info("Training log logged to MLflow")
+
+        logger.info("=" * 60)
+        logger.info("All artifacts saved successfully!")
+        logger.info("Model directory: %s", out_dir)
+        logger.info("MLflow run ID: %s", mlflow.active_run().info.run_id)
+        logger.info("=" * 60)
 
 
 def _attach_file_logger(log_path: str):

@@ -1,0 +1,3 @@
+# TorchServe handler dependencies
+transformers>=4.44.0
+torch>=2.0.0

@@ -1,4 +1,6 @@
 [core]
-    remote = storage
+    remote = gdrive
 ['remote "storage"']
     url = ../dvc_storage
+['remote "gdrive"']
+    url = /Users/ivanevgenyevich/GoogleDrive/MLOps-DVC-Storage

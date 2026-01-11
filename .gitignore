@@ -54,6 +54,10 @@ checkpoints/
 runs/
 logs/
 
+# MLflow
+mlruns/
+mlartifacts/
+
 # DVC
 .dvc/cache/
 .dvc/tmp/

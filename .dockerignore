@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files (will be pulled via DVC or mounted)
+*.csv
+*.pkl
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.parquet
+*.jsonl
+data/processed/
+data/raw/
+
+# Model artifacts (will be pulled via DVC or mounted)
+artefacts/
+models/*/
+!models/.gitkeep
+
+# Logs
+*.log
+logs/
+mlruns/
+
+# Git
+.git/
+.gitignore
+
+# DVC cache
+.dvc/cache/
+.dvc/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
