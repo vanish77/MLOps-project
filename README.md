@@ -103,7 +103,7 @@ cd MLOps-project
 # Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate  # Linux/Mac
-# èëè: .venv\Scripts\activate  # Windows
+# Ã¨Ã«Ã¨: .venv\Scripts\activate  # Windows
 
 # Install dependencies
 pip install --upgrade pip
@@ -477,55 +477,6 @@ Key features:
 - Detailed logging
 - Probability distribution output
 
-### Files Structure
-
-```
-torchserve/
-??? export_model.py          # Export HuggingFace model to TorchScript
-??? handler.py               # Custom TorchServe handler
-??? config.properties        # TorchServe configuration
-??? requirements.txt         # Handler dependencies
-??? create_mar.sh            # Script to create .mar archive
-??? Dockerfile               # TorchServe Docker image
-??? sample_request.json      # Example API request
-??? model-artifacts/         # Exported model files (generated)
-?   ??? model.pt
-?   ??? config.json
-?   ??? tokenizer.json
-??? model-store/             # Model archives (generated)
-    ??? imdb-sentiment.mar
-```
-
-### Troubleshooting
-
-**Container won't start:**
-```bash
-# Check logs
-docker logs imdb-sentiment
-
-# Run in foreground for debugging
-docker run --rm -it -p 8080:8080 -p 8081:8081 imdb-sentiment-serve:v1
-```
-
-**Model not loading:**
-```bash
-# Verify .mar file exists
-ls -lh torchserve/model-store/
-
-# Check model registration
-curl http://localhost:8081/models
-```
-
-**Slow inference:**
-```bash
-# Increase workers
-curl -X PUT http://localhost:8081/models/imdb-sentiment?min_worker=2&max_worker=4
-
-# Check metrics
-curl http://localhost:8082/metrics | grep -i imdb
-```
-
----
 
 ## Project Structure
 
@@ -849,24 +800,6 @@ dvc remote add -d storage gs://bucket-name/mlops
 dvc push
 ```
 
-**Google Drive Setup:**
-
-For easy cloud backup and sharing, you can use Google Drive as DVC remote:
-
-1. **Install Google Drive Desktop** (if not already installed)
-2. **Run setup script:**
-   ```bash
-   bash setup_gdrive_remote.sh
-   ```
-3. **Verify sync:** Check `~/Google Drive/MLOps-DVC-Storage/` folder
-4. **Push data:**
-   ```bash
-   dvc push
-   ```
-
-See `DVC_GOOGLE_DRIVE_SETUP.md` for detailed instructions.
-
-For detailed DVC setup instructions, see [DVC_SETUP.md](DVC_SETUP.md).
 
 ### Reproducibility
 
@@ -910,11 +843,6 @@ dvc pull
 # Or rebuild from scratch
 dvc repro
 ```
-
-See [DVC_SETUP.md](DVC_SETUP.md) for detailed DVC setup instructions.
-- **DVC for data and model versioning**
-- **Pipeline definition in `dvc.yaml`**
-- **Full reproducibility via `dvc repro`**
 
 ---
 
@@ -1058,11 +986,3 @@ make clean      # Clean build artifacts
 - **CPU:** Works on any platform, training takes ~30-45 minutes
 - **Apple Silicon (M1/M2):** Automatically uses MPS acceleration, ~10-15 minutes
 - **NVIDIA GPU:** Set `fp16: true` in config for faster training
-
-## License
-
-This project is for educational purposes.
-
-## Author
-
-MLOps course project - Sentiment Analysis on IMDb dataset
